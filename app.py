@@ -21,13 +21,13 @@ if 'dados' not in st.session_state:
 def adicionar_dinheiro(valor):
     st.session_state['dados']['Dinheiro em Conta'] += valor
 
-def adicionar_gasto_diario(descricao, valor):
-    st.session_state['dados']['Gastos Diários'].append({'Descrição': descricao, 'Valor': valor})
-    st.session_state['dados']['Historico Gastos'].append({'Descrição': descricao, 'Valor': valor})
-
-def adicionar_gasto_fixo(descricao, valor):
-    st.session_state['dados']['Gastos Fixos Mensais'].append({'Descrição': descricao, 'Valor': valor})
-    st.session_state['dados']['Historico Gastos'].append({'Descrição': descricao, 'Valor': valor})
+def adicionar_gasto(descricao, valor, categoria, motivo):
+    gasto = {'Descrição': descricao, 'Valor': valor, 'Categoria': categoria, 'Motivo': motivo}
+    if categoria == "Diário":
+        st.session_state['dados']['Gastos Diários'].append(gasto)
+    else:
+        st.session_state['dados']['Gastos Fixos Mensais'].append(gasto)
+    st.session_state['dados']['Historico Gastos'].append(gasto)
 
 # Inputs para adicionar valores
 st.header("Adicionar Dinheiro em Conta")
@@ -36,19 +36,14 @@ if st.button("Adicionar Dinheiro"):
     adicionar_dinheiro(valor_dinheiro)
     st.success("Dinheiro adicionado com sucesso!")
 
-st.header("Registrar Gastos Diários")
-descricao_diaria = st.text_input("Descrição do Gasto Diário")
-valor_diario = st.number_input("Valor Diário", min_value=0.0, format="%.2f", key="valor_diario")
-if st.button("Adicionar Gasto Diário"):
-    adicionar_gasto_diario(descricao_diaria, valor_diario)
-    st.success("Gasto diário adicionado com sucesso!")
-
-st.header("Registrar Gastos Fixos Mensais")
-descricao_fixo = st.text_input("Descrição do Gasto Fixo")
-valor_fixo = st.number_input("Valor Fixo", min_value=0.0, format="%.2f", key="valor_fixo")
-if st.button("Adicionar Gasto Fixo"):
-    adicionar_gasto_fixo(descricao_fixo, valor_fixo)
-    st.success("Gasto fixo adicionado com sucesso!")
+st.header("Registrar Gastos")
+descricao = st.text_input("Descrição do Gasto")
+valor = st.number_input("Valor", min_value=0.0, format="%.2f", key="valor")
+categoria = st.selectbox("Categoria", ["Diário", "Fixo Mensal"])
+motivo = st.text_input("Motivo do Gasto")
+if st.button("Adicionar Gasto"):
+    adicionar_gasto(descricao, valor, categoria, motivo)
+    st.success("Gasto adicionado com sucesso!")
 
 # Exibir os dados
 st.header("Dados Atuais")
@@ -59,6 +54,35 @@ if st.session_state['dados']['Gastos Diários']:
 if st.session_state['dados']['Gastos Fixos Mensais']:
     st.write("Gastos Fixos Mensais:")
     st.write(pd.DataFrame(st.session_state['dados']['Gastos Fixos Mensais']))
+
+# Função para editar dados
+def editar_dados():
+    st.subheader("Editar Gastos")
+    tipo_gasto = st.selectbox("Selecionar Tipo de Gasto", ["Diário", "Fixo Mensal"])
+    if tipo_gasto == "Diário":
+        gastos = st.session_state['dados']['Gastos Diários']
+    else:
+        gastos = st.session_state['dados']['Gastos Fixos Mensais']
+    
+    if gastos:
+        gasto_selecionado = st.selectbox("Selecionar Gasto", [f"{g['Descrição']} - R$ {g['Valor']:.2f}" for g in gastos])
+        gasto_index = [f"{g['Descrição']} - R$ {g['Valor']:.2f}" for g in gastos].index(gasto_selecionado)
+        
+        nova_descricao = st.text_input("Nova Descrição", value=gastos[gasto_index]['Descrição'])
+        novo_valor = st.number_input("Novo Valor", min_value=0.0, format="%.2f", value=gastos[gasto_index]['Valor'])
+        novo_motivo = st.text_input("Novo Motivo", value=gastos[gasto_index]['Motivo'])
+        
+        if st.button("Salvar Alterações"):
+            gastos[gasto_index]['Descrição'] = nova_descricao
+            gastos[gasto_index]['Valor'] = novo_valor
+            gastos[gasto_index]['Motivo'] = novo_motivo
+            st.success("Gasto atualizado com sucesso!")
+            
+        if st.button("Excluir Gasto"):
+            gastos.pop(gasto_index)
+            st.success("Gasto excluído com sucesso!")
+
+editar_dados()
 
 # Gerar gráficos
 st.header("Gráficos")
