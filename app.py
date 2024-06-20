@@ -68,9 +68,9 @@ def editar_dados():
         gasto_selecionado = st.selectbox("Selecionar Gasto", [f"{g['Descrição']} - R$ {g['Valor']:.2f}" for g in gastos])
         gasto_index = [f"{g['Descrição']} - R$ {g['Valor']:.2f}" for g in gastos].index(gasto_selecionado)
         
-        nova_descricao = st.text_input("Nova Descrição", value=gastos[gasto_index]['Descrição'])
-        novo_valor = st.number_input("Novo Valor", min_value=0.0, format="%.2f", value=gastos[gasto_index]['Valor'])
-        novo_motivo = st.text_input("Novo Motivo", value=gastos[gasto_index]['Motivo'])
+        nova_descricao = st.text_input("Nova Descrição", value=gastos[gasto_index].get('Descrição', ''))
+        novo_valor = st.number_input("Novo Valor", min_value=0.0, format="%.2f", value=gastos[gasto_index].get('Valor', 0.0))
+        novo_motivo = st.text_input("Novo Motivo", value=gastos[gasto_index].get('Motivo', ''))
         
         if st.button("Salvar Alterações"):
             gastos[gasto_index]['Descrição'] = nova_descricao
