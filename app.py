@@ -12,6 +12,7 @@ st.title("Aplicativo de Controle de Gastos")
 if 'dados' not in st.session_state:
     st.session_state['dados'] = {
         'Dinheiro em Conta': 0.0,
+        'Renda Mensal': 0.0,
         'Gastos Diários': [],
         'Gastos Fixos Mensais': [],
         'Historico Gastos': []
@@ -23,11 +24,16 @@ def adicionar_dinheiro(valor):
 
 def adicionar_gasto(descricao, valor, categoria, motivo):
     gasto = {'Descrição': descricao, 'Valor': valor, 'Categoria': categoria, 'Motivo': motivo}
+    st.session_state['dados']['Dinheiro em Conta'] -= valor
     if categoria == "Diário":
         st.session_state['dados']['Gastos Diários'].append(gasto)
     else:
         st.session_state['dados']['Gastos Fixos Mensais'].append(gasto)
     st.session_state['dados']['Historico Gastos'].append(gasto)
+
+def adicionar_renda_mensal(valor):
+    st.session_state['dados']['Renda Mensal'] = valor
+    st.session_state['dados']['Dinheiro em Conta'] += valor
 
 # Inputs para adicionar valores
 st.header("Adicionar Dinheiro em Conta")
@@ -35,6 +41,12 @@ valor_dinheiro = st.number_input("Valor", min_value=0.0, format="%.2f")
 if st.button("Adicionar Dinheiro"):
     adicionar_dinheiro(valor_dinheiro)
     st.success("Dinheiro adicionado com sucesso!")
+
+st.header("Adicionar Renda Mensal")
+valor_renda = st.number_input("Renda Mensal", min_value=0.0, format="%.2f", key="renda")
+if st.button("Adicionar Renda Mensal"):
+    adicionar_renda_mensal(valor_renda)
+    st.success("Renda mensal adicionada com sucesso!")
 
 st.header("Registrar Gastos")
 descricao = st.text_input("Descrição do Gasto")
@@ -48,12 +60,18 @@ if st.button("Adicionar Gasto"):
 # Exibir os dados
 st.header("Dados Atuais")
 st.write(f"Dinheiro em Conta: R$ {st.session_state['dados']['Dinheiro em Conta']:.2f}")
+st.write(f"Renda Mensal: R$ {st.session_state['dados']['Renda Mensal']:.2f}")
 if st.session_state['dados']['Gastos Diários']:
     st.write("Gastos Diários:")
     st.write(pd.DataFrame(st.session_state['dados']['Gastos Diários']))
 if st.session_state['dados']['Gastos Fixos Mensais']:
     st.write("Gastos Fixos Mensais:")
     st.write(pd.DataFrame(st.session_state['dados']['Gastos Fixos Mensais']))
+
+# Calcular o total gasto no mês
+total_gastos_mes = sum(gasto['Valor'] for gasto in st.session_state['dados']['Historico Gastos'])
+
+st.write(f"Total Gasto no Mês: R$ {total_gastos_mes:.2f}")
 
 # Função para editar dados
 def editar_dados():
@@ -73,12 +91,20 @@ def editar_dados():
         novo_motivo = st.text_input("Novo Motivo", value=gastos[gasto_index].get('Motivo', ''))
         
         if st.button("Salvar Alterações"):
+            # Atualizar o dinheiro em conta com o valor antigo e novo
+            valor_antigo = gastos[gasto_index]['Valor']
+            st.session_state['dados']['Dinheiro em Conta'] += valor_antigo - novo_valor
+            
             gastos[gasto_index]['Descrição'] = nova_descricao
             gastos[gasto_index]['Valor'] = novo_valor
             gastos[gasto_index]['Motivo'] = novo_motivo
             st.success("Gasto atualizado com sucesso!")
             
         if st.button("Excluir Gasto"):
+            # Atualizar o dinheiro em conta ao excluir o gasto
+            valor_antigo = gastos[gasto_index]['Valor']
+            st.session_state['dados']['Dinheiro em Conta'] += valor_antigo
+            
             gastos.pop(gasto_index)
             st.success("Gasto excluído com sucesso!")
 
